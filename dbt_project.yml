@@ -1,0 +1,20 @@
+# Fichier: dbt_project.yml (Vérifiez l'indentation de chaque ligne)
+
+name: 'linkedin_pages_transform' 
+config-version: 2
+version: '1.0.0'
+
+profile: 'bigquery_client_project' 
+
+model-paths: ["models"]
+seed-paths: ["seeds"]
+test-paths: ["tests"]
+macro-paths: ["macros"]
+
+target-path: "target"
+
+# Optionnel : Ajoutez cette section pour définir le comportement par défaut des modèles
+models:
+  linkedin_pages_transform:
+    # Tous les modèles seront des tables par défaut, créées dans le dataset cible du profil
+    +materialized: table

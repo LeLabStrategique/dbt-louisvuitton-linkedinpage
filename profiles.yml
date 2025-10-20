@@ -1,0 +1,12 @@
+# Fichier: ~/.dbt/profiles.yml (Ceci est le fichier de configuration de CONNEXION)
+
+bigquery_client_project: 
+  target: dev
+  outputs:
+    dev:
+      type: bigquery
+      method: oauth # Utilisera votre authentification utilisateur sur le PC du client
+      project: lv-gcp-dcx-dev-dp-lake-ww # L'ID de votre projet
+      dataset: lv_bqd_dev_dp_linkedinpages_service # Le dataset où dbt va écrire les tables (staging/marts)
+      threads: 4
+      location: EU # Par défaut, nous supposons la région EU
