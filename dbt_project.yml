@@ -1,20 +1,35 @@
-# Fichier: dbt_project.yml (Vérifiez l'indentation de chaque ligne)
-
-name: 'linkedin_pages_transform' 
-config-version: 2
+name: 'linkedin_pages_transform'
 version: '1.0.0'
+config-version: 2
 
-profile: 'bigquery_client_project' 
+profile: 'user'
 
 model-paths: ["models"]
-seed-paths: ["seeds"]
+analysis-paths: ["analysis"]
 test-paths: ["tests"]
 macro-paths: ["macros"]
-
+snapshot-paths: ["snapshots"]
 target-path: "target"
+log-path: "logs"
 
-# Optionnel : Ajoutez cette section pour définir le comportement par défaut des modèles
+clean-targets:
+  - "target"
+  - "dbt_packages"
+
+# ⚙️ Forcer le nom exact des datasets (sans préfixe DBT Cloud)
 models:
   linkedin_pages_transform:
-    # Tous les modèles seront des tables par défaut, créées dans le dataset cible du profil
-    +materialized: table
+    +materialized: incremental
+    +schema: "{{ target.name }}"  # défaut
+
+    staging:
+      # Dataset = nom du dataset source + "_STAGING"
+      +schema: "{{ var('source_dataset', 'linkedin_pages_normalized') }}_STAGING"
+      +materialized: incremental
+      +tags: ['staging']
+
+    mart:
+      # Dataset = nom du dataset source + "_MART"
+      +schema: "{{ var('source_dataset', 'linkedin_pages_normalized') }}_MART"
+      +materialized: table
+      +tags: ['mart']

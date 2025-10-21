@@ -35,7 +35,6 @@ WITH source_data AS (
         ) AS rn
         
     FROM
-        -- Utilisation de la macro {{ source() }}
         {{ source('linkedin_pages_normalized', 'time_bound_share_statistic') }}
     
     -- La clause WHERE est conservée pour garantir l'intégrité de la clé de fusion

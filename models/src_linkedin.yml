@@ -1,0 +1,54 @@
+version: 2
+
+sources:
+  - name: linkedin_pages_normalized
+    database: dbt-bq-training-473915
+    schema: linkedin_company_pages
+    tables:
+      - name: comment_history
+      - name: comment_on_comment
+      - name: comment_on_ugc_post
+      - name: comment_social_metadata_summary
+      - name: followers_by_association_type
+      - name: followers_by_function
+      - name: followers_by_geo
+      - name: followers_by_geo_country
+      - name: followers_by_industry
+      - name: followers_by_seniority
+      - name: followers_by_staff_count_range
+      - name: function
+      - name: geo
+      - name: industry
+      - name: page_statistic_by_function
+      - name: page_statistic_by_geo
+      - name: page_statistic_by_industry
+      - name: page_statistic_by_geo_country
+      - name: page_statistic_by_seniority
+      - name: page_statistic_by_staff_count_range
+      - name: post_carousel_card
+      - name: post_content
+      - name: post_multi_image
+      - name: seniority
+      - name: share_carousel_card
+      - name: share_content
+      - name: share_history
+      - name: share_share_statistic
+      - name: share_statistic
+      - name: social_metadata_summary
+      - name: time_bound_follower_statistic
+      - name: time_bound_page_statistic
+      - name: time_bound_share_statistic
+      - name: total_follower_statistic
+      - name: total_page_statistic
+      - name: total_share_statistic
+      - name: ugc_post_history
+      - name: ugc_post_share_statistic
+      - name: ugc_post_social_metadata_summary
+
+  - name: linkedin_config
+    database: dbt-bq-training-473915
+    schema: CONFIG_linkedin_company_pages
+    tables:
+      - name: dim_country_region_LV
+      - name: dim_post_category_keyword
+      

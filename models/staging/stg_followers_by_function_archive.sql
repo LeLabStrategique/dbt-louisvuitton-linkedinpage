@@ -8,42 +8,40 @@
 
 WITH function_mapping AS (
     SELECT
-      f._fivetran_id,
-      f._organization_entity_urn AS organization_id,
-      f.function_id,
-      COALESCE(fu.name, 'Unknown') AS function_name,
+      DATE(f._fivetran_synced) AS day,
+      CAST(f.function_id AS INT64) AS function_id,
+      COALESCE(fn.name, 'Unknown') AS function_name,
       COALESCE(f.follower_counts_organic_follower_count, 0) AS follower_counts_organic_follower_count,
       COALESCE(f.follower_counts_paid_follower_count, 0) AS follower_counts_paid_follower_count,
+      f._fivetran_id,
       f._fivetran_synced,
-      DATE(f._fivetran_synced) AS day,
-      
+      f._organization_entity_urn AS organization_id,
+
       ROW_NUMBER() OVER (
-        PARTITION BY f.function_id, DATE(f._fivetran_synced)
+        PARTITION BY CAST(f.function_id AS INT64), DATE(f._fivetran_synced)
         ORDER BY f._fivetran_synced DESC
       ) AS rn
-    
+
     FROM 
       {{ source('linkedin_pages_normalized', 'followers_by_function') }} f
     LEFT JOIN 
-      {{ source('linkedin_pages_normalized', 'function') }} fu
-      ON f.function_id = fu.id
+      {{ source('linkedin_pages_normalized', 'function') }} fn
+      ON CAST(f.function_id AS INT64) = fn.id
 )
 
 SELECT
-  _fivetran_id,
-  organization_id,
+  day,
   function_id,
   function_name,
   follower_counts_organic_follower_count,
   follower_counts_paid_follower_count,
+  _fivetran_id,
   _fivetran_synced,
-  day
+  organization_id
 
 FROM function_mapping
+WHERE rn = 1
 
-WHERE 
-  rn = 1
-  
-  {% if is_incremental() %}
-  AND DATE(day) >= DATE_SUB(CURRENT_DATE(), INTERVAL 7 DAY) 
-  {% endif %}
+{% if is_incremental() %}
+  AND DATE(day) >= DATE_SUB(CURRENT_DATE(), INTERVAL 7 DAY)
+{% endif %}

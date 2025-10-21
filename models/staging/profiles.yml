@@ -6,7 +6,7 @@ bigquery_client_project:
     dev:
       type: bigquery
       method: oauth # Utilisera votre authentification utilisateur sur le PC du client
-      project: lv-gcp-dcx-dev-dp-lake-ww # L'ID de votre projet
-      dataset: lv_bqd_dev_dp_linkedinpages_service # Le dataset où dbt va écrire les tables (staging/marts)
+      project: dbt-bq-training-473915 # lv-gcp-dcx-dev-dp-lake-ww L'ID de votre projet
+      dataset: linkedin_company_pages #lv_bqd_dev_dp_linkedinpages_service  Le dataset où dbt va écrire les tables (staging/marts)
       threads: 4
       location: EU # Par défaut, nous supposons la région EU

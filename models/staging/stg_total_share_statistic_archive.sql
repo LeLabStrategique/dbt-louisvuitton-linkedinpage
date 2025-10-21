@@ -34,9 +34,9 @@ WITH source_data AS (
             ORDER BY _fivetran_synced DESC 
         ) AS rn
         
-    FROM
-        -- Utilisation de la macro {{ source() }}
+   FROM
         {{ source('linkedin_pages_normalized', 'total_share_statistic') }}
+
     
     -- La clause WHERE est conservée pour garantir l'intégrité de la clé de fusion
     WHERE _organization_entity_urn IS NOT NULL
