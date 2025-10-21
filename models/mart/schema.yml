@@ -1,0 +1,43 @@
+models:
+  - name: mrt_ugc_post_master_daily
+    description: Mart final journalier des statistiques de publication LinkedIn.
+    
+    # ⭐️ NOUVELLE STRUCTURE DE LA SECTION TESTS ⭐️
+    tests:
+      # 1. Test d'Unicité (dbt_utils - OK)
+      - dbt_utils.unique_combination_of_columns:
+          combination_of_columns: ['post_id', 'day']
+          config:
+            severity: error 
+            
+      # 2. Test de Non-Négativité des Impressions (dbt_expectations - CORRIGÉ)
+      - dbt_expectations.expression_is_true:
+          expression: "COALESCE(impression_count, 0) >= 0"
+          config:
+            severity: error 
+            
+      # 3. Test de Non-Négativité des Clics (dbt_expectations - CORRIGÉ)
+      - dbt_expectations.expression_is_true:
+          expression: "COALESCE(click_count, 0) >= 0"
+          config:
+            severity: error 
+
+      # 4. Test de Validité de la Date (dbt_expectations - CORRIGÉ)
+      - dbt_expectations.expression_is_true:
+          expression: "CAST(day AS DATE) >= DATE('2024-01-01')"
+          config:
+            severity: warn
+            
+    columns:
+      - name: day
+        tests:
+          - not_null
+          
+      - name: post_id
+        tests:
+          - not_null
+          
+      - name: organization_id
+        tests:
+          - not_null
+      # ... (Laissez not_null uniquement pour les autres colonnes)

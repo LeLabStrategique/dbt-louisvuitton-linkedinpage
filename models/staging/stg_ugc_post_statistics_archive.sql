@@ -14,7 +14,7 @@ WITH ugc_posts AS (
         t1._fivetran_synced AS ugc_post_synced, 
         REGEXP_EXTRACT(id, r'ugcPost:([0-9]+)$') AS extracted_ugc_post_id
     FROM 
-        {{ source('linkedin_pages_normalized', 'ugc_post_history') }} t1 -- Ajout d'alias pour la clarté
+        {{ source('linkedin_pages_normalized', 'ugc_post_history') }} t1
 ),
 
 -- 1. Jointure avec les statistiques de partage UGC
@@ -82,21 +82,10 @@ master_table_raw AS (
         ON t1.share_statistic_id = t2._fivetran_id
     WHERE t1.share_statistic_id IS NOT NULL
       AND t1.rn_history = 1 
-),
-
--- 5. Déduplication : on garde la ligne la plus récente par jour et par post_id
-deduplicated AS (
-    SELECT
-        *,
-        ROW_NUMBER() OVER (
-            PARTITION BY id, DATE(share_statistic_synced)
-            ORDER BY share_statistic_synced DESC
-        ) AS rn
-    FROM master_table_raw
-    WHERE share_statistic_synced IS NOT NULL
 )
+-- FIN DE VOS CTEs --
 
--- 6. Sélection finale
+-- 6. Sélection finale (Utilise la CTE master_table_raw directement)
 SELECT 
     DATE(share_statistic_synced) AS day, 
     id AS post_id, 
@@ -112,12 +101,20 @@ SELECT
     COALESCE(impression_count, 0) AS impression_count,
     COALESCE(comment_count, 0) AS comment_count,
     share_statistic_synced,
-    ugc_post_synced, -- ⬅️ Nom de colonne corrigé
+    ugc_post_synced,
     ugc_post_id,
     _organization_entity_urn AS organization_id,
     share_statistic_synced IS NOT NULL AS has_live_stats
-FROM deduplicated
-WHERE rn = 1
+FROM master_table_raw
+
+-- ⭐️ REMPLACEMENT DE LA CTE 'deduplicated' ET DU 'WHERE rn = 1' FINAL ⭐️
+-- Dédoublonnage ULTIME avec QUALIFY : garantit qu'il n'y a qu'une seule ligne par (post_id, day).
+QUALIFY 
+    ROW_NUMBER() OVER (
+        PARTITION BY id, DATE(share_statistic_synced)
+        ORDER BY share_statistic_synced DESC 
+    ) = 1
+
 {% if is_incremental() %}
   AND DATE(share_statistic_synced) >= DATE_SUB(CURRENT_DATE(), INTERVAL 7 DAY)
 {% endif %}
