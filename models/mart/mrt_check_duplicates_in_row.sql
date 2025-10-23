@@ -1,3 +1,9 @@
+{{
+    config(
+        materialized='table',
+        schema='linkedin_company_pages_MART',
+    )
+}}
 -- Objectif : Détecter les doublons parfaits de ligne pour une même clé (post_id, day)
 
 -- 1. Hacher chaque ligne du Mart pour obtenir une signature unique
