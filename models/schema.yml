@@ -1,0 +1,451 @@
+version: 2
+
+models:
+  - name: stg_pages_snapshot
+    description: Staging model that consolidates page statistics from multiple dimensions (function, geo, geo_country, seniority, staff_count_range) into a unified snapshot.
+    config:
+      schema: _STAGING
+      materialized: table
+      cluster_by: ['day', 'organization_id', 'dimension']
+    columns:
+      - name: day
+        description: Date of the snapshot, derived from _fivetran_synced.
+        tests:
+          - not_null
+      - name: dimension_id
+        description: Identifier for the dimension (e.g., function_id, geo_id, seniority_id, staff_count_range).
+        tests:
+          - not_null
+      - name: dimension
+        description: Type of dimension (function, geo, geo_country, seniority, staff_count_range).
+        tests:
+          - not_null
+          - accepted_values:
+              values: ['function', 'geo', 'geo_country', 'seniority', 'staff_count_range']
+      - name: dimension_name
+        description: Human-readable name of the dimension (e.g., function name, geo name).
+        tests:
+          - not_null
+      - name: all_desktop_page_views
+        description: Total page views from desktop devices.
+      - name: all_mobile_page_views
+        description: Total page views from mobile devices.
+      - name: all_page_views
+        description: Total page views across all devices.
+      - name: about_page_views
+        description: Views of the 'About' page.
+      - name: careers_page_views
+        description: Views of the 'Careers' page.
+      - name: products_page_views
+        description: Views of the 'Products' page.
+      - name: jobs_page_views
+        description: Views of the 'Jobs' page.
+      - name: people_page_views
+        description: Views of the 'People' page.
+      - name: overview_page_views
+        description: Views of the 'Overview' page.
+      - name: life_at_page_views
+        description: Views of the 'Life At' page.
+      - name: insights_page_views
+        description: Views of the 'Insights' page.
+      - name: mobile_careers_page_views
+        description: Views of the 'Careers' page from mobile devices.
+      - name: mobile_overview_page_views
+        description: Views of the 'Overview' page from mobile devices.
+      - name: mobile_jobs_page_views
+        description: Views of the 'Jobs' page from mobile devices.
+      - name: mobile_life_at_page_views
+        description: Views of the 'Life At' page from mobile devices.
+      - name: mobile_insights_page_views
+        description: Views of the 'Insights' page from mobile devices.
+      - name: mobile_products_page_views
+        description: Views of the 'Products' page from mobile devices.
+      - name: mobile_about_page_views
+        description: Views of the 'About' page from mobile devices.
+      - name: mobile_people_page_views
+        description: Views of the 'People' page from mobile devices.
+      - name: desktop_insights_page_views
+        description: Views of the 'Insights' page from desktop devices.
+      - name: desktop_careers_page_views
+        description: Views of the 'Careers' page from desktop devices.
+      - name: desktop_life_at_page_views
+        description: Views of the 'Life At' page from desktop devices.
+      - name: desktop_jobs_page_views
+        description: Views of the 'Jobs' page from desktop devices.
+      - name: desktop_people_page_views
+        description: Views of the 'People' page from desktop devices.
+      - name: desktop_about_page_views
+        description: Views of the 'About' page from desktop devices.
+      - name: desktop_overview_page_views
+        description: Views of the 'Overview' page from desktop devices.
+      - name: desktop_products_page_views
+        description: Views of the 'Products' page from desktop devices.
+      - name: _fivetran_id
+        description: Fivetran-generated ID for the record.
+        tests:
+          - not_null
+      - name: _fivetran_synced
+        description: Timestamp when the record was synced by Fivetran.
+        tests:
+          - not_null
+      - name: organization_id
+        description: Identifier for the organization (LinkedIn page).
+        tests:
+          - not_null
+      - tests:
+          - unique:
+              column_name: "(day, dimension_id, dimension, organization_id)"
+
+  - name: stg_posts_snapshot
+    description: Staging model that aggregates post-related data (descriptive attributes and metrics) into a daily snapshot.
+    config:
+      schema: _STAGING
+      materialized: table
+      cluster_by: ['post_id', 'day']
+    columns:
+      - name: day
+        description: Date of the snapshot, derived from _fivetran_synced.
+        tests:
+          - not_null
+      - name: post_id
+        description: Unique identifier for the LinkedIn post.
+        tests:
+          - not_null
+      - name: organization_id
+        description: Identifier for the organization that owns the post.
+        tests:
+          - not_null
+      - name: type
+        description: Type of the post (e.g., text, image, video).
+        tests:
+          - not_null
+      - name: author
+        description: Author of the post.
+      - name: commentary
+        description: Text content or commentary of the post.
+      - name: visibility
+        description: Visibility setting of the post (e.g., public, connections).
+      - name: created_time
+        description: Timestamp when the post was created.
+        tests:
+          - not_null
+      - name: first_published_at
+        description: Timestamp when the post was first published.
+        tests:
+          - not_null
+      - name: last_modified_time
+        description: Timestamp when the post was last modified.
+      - name: lifecycle_state
+        description: Current lifecycle state of the post (e.g., published, deleted).
+      - name: ugc_post_synced
+        description: Timestamp when the post data was synced by Fivetran.
+        tests:
+          - not_null
+      - name: engagement
+        description: Engagement metric for the post.
+      - name: share_count
+        description: Number of shares for the post.
+      - name: click_count
+        description: Number of clicks on the post.
+      - name: like_count
+        description: Number of likes on the post.
+      - name: impression_count
+        description: Number of impressions for the post.
+      - name: comment_count
+        description: Number of comments on the post.
+      - name: _fivetran_synced
+        description: Timestamp when the post statistics were synced by Fivetran.
+        tests:
+          - not_null
+      - tests:
+          - unique:
+              column_name: "(post_id, day)"
+
+  - name: mrt_pages_daily
+    description: Mart model that enriches page statistics from stg_pages_snapshot with country-level details for the geo_country dimension.
+    config:
+      schema: _MART
+      materialized: table
+      cluster_by: ['day', 'organization_id', 'dimension']
+    columns:
+      - name: day
+        description: Date of the snapshot.
+        tests:
+          - not_null
+      - name: dimension_id
+        description: Identifier for the dimension (e.g., function_id, geo_id).
+        tests:
+          - not_null
+      - name: dimension
+        description: Type of dimension (function, geo, geo_country, seniority, staff_count_range).
+        tests:
+          - not_null
+          - accepted_values:
+              values: ['function', 'geo', 'geo_country', 'seniority', 'staff_count_range']
+      - name: dimension_name
+        description: Human-readable name of the dimension.
+        tests:
+          - not_null
+      - name: geo_country_name
+        description: Name of the country for geo_country dimension, null for others.
+      - name: continent
+        description: Continent for geo_country dimension, null for others.
+      - name: Zone_LV
+        description: Zone for geo_country dimension, null for others.
+      - name: Region_LV
+        description: Region for geo_country dimension, null for others.
+      - name: country_LV
+        description: Country code for geo_country dimension, null for others.
+      - name: all_desktop_page_views
+        description: Total page views from desktop devices.
+      - name: all_mobile_page_views
+        description: Total page views from mobile devices.
+      - name: all_page_views
+        description: Total page views across all devices.
+      - name: about_page_views
+        description: Views of the 'About' page.
+      - name: careers_page_views
+        description: Views of the 'Careers' page.
+      - name: products_page_views
+        description: Views of the 'Products' page.
+      - name: jobs_page_views
+        description: Views of the 'Jobs' page.
+      - name: people_page_views
+        description: Views of the 'People' page.
+      - name: overview_page_views
+        description: Views of the 'Overview' page.
+      - name: life_at_page_views
+        description: Views of the 'Life At' page.
+      - name: insights_page_views
+        description: Views of the 'Insights' page.
+      - name: mobile_careers_page_views
+        description: Views of the 'Careers' page from mobile devices.
+      - name: mobile_overview_page_views
+        description: Views of the 'Overview' page from mobile devices.
+      - name: mobile_jobs_page_views
+        description: Views of the 'Jobs' page from mobile devices.
+      - name: mobile_life_at_page_views
+        description: Views of the 'Life At' page from mobile devices.
+      - name: mobile_insights_page_views
+        description: Views of the 'Insights' page from mobile devices.
+      - name: mobile_products_page_views
+        description: Views of the 'Products' page from mobile devices.
+      - name: mobile_about_page_views
+        description: Views of the 'About' page from mobile devices.
+      - name: mobile_people_page_views
+        description: Views of the 'People' page from mobile devices.
+      - name: desktop_insights_page_views
+        description: Views of the 'Insights' page from desktop devices.
+      - name: desktop_careers_page_views
+        description: Views of the 'Careers' page from desktop devices.
+      - name: desktop_life_at_page_views
+        description: Views of the 'Life At' page from desktop devices.
+      - name: desktop_jobs_page_views
+        description: Views of the 'Jobs' page from desktop devices.
+      - name: desktop_people_page_views
+        description: Views of the 'People' page from desktop devices.
+      - name: desktop_about_page_views
+        description: Views of the 'About' page from desktop devices.
+      - name: desktop_overview_page_views
+        description: Views of the 'Overview' page from desktop devices.
+      - name: desktop_products_page_views
+        description: Views of the 'Products' page from desktop devices.
+      - name: _fivetran_id
+        description: Fivetran-generated ID for the record.
+        tests:
+          - not_null
+      - name: _fivetran_synced
+        description: Timestamp when the record was synced by Fivetran.
+        tests:
+          - not_null
+      - name: organization_id
+        description: Identifier for the organization (LinkedIn page).
+        tests:
+          - not_null
+      - tests:
+          - unique:
+              column_name: "(day, dimension_id, dimension, organization_id)"
+
+  - name: mrt_pages_on_going
+    description: Mart model that maintains an ongoing, incrementally updated table of page statistics, with UPSERT logic based on day, dimension_id, dimension, and organization_id.
+    config:
+      schema: _MART
+      materialized: incremental
+      unique_key: ['day', 'dimension_id', 'dimension', 'organization_id']
+      cluster_by: ['day', 'organization_id', 'dimension']
+      incremental_strategy: merge
+      on_schema_change: fail
+    columns:
+      - name: day
+        description: Date of the snapshot.
+        tests:
+          - not_null
+      - name: dimension_id
+        description: Identifier for the dimension (e.g., function_id, geo_id).
+        tests:
+          - not_null
+      - name: dimension
+        description: Type of dimension (function, geo, geo_country, seniority, staff_count_range).
+        tests:
+          - not_null
+          - accepted_values:
+              values: ['function', 'geo', 'geo_country', 'seniority', 'staff_count_range']
+      - name: dimension_name
+        description: Human-readable name of the dimension.
+        tests:
+          - not_null
+      - name: geo_country_name
+        description: Name of the country for geo_country dimension, null for others.
+      - name: continent
+        description: Continent for geo_country dimension, null for others.
+      - name: Zone_LV
+        description: Zone for geo_country dimension, null for others.
+      - name: Region_LV
+        description: Region for geo_country dimension, null for others.
+      - name: country_LV
+        description: Country code for geo_country dimension, null for others.
+      - name: all_desktop_page_views
+        description: Total page views from desktop devices.
+      - name: all_mobile_page_views
+        description: Total page views from mobile devices.
+      - name: all_page_views
+        description: Total page views across all devices.
+      - name: about_page_views
+        description: Views of the 'About' page.
+      - name: careers_page_views
+        description: Views of the 'Careers' page.
+      - name: products_page_views
+        description: Views of the 'Products' page.
+      - name: jobs_page_views
+        description: Views of the 'Jobs' page.
+      - name: people_page_views
+        description: Views of the 'People' page.
+      - name: overview_page_views
+        description: Views of the 'Overview' page.
+      - name: life_at_page_views
+        description: Views of the 'Life At' page.
+      - name: insights_page_views
+        description: Views of the 'Insights' page.
+      - name: mobile_careers_page_views
+        description: Views of the 'Careers' page from mobile devices.
+      - name: mobile_overview_page_views
+        description: Views of the 'Overview' page from mobile devices.
+      - name: mobile_jobs_page_views
+        description: Views of the 'Jobs' page from mobile devices.
+      - name: mobile_life_at_page_views
+        description: Views of the 'Life At' page from mobile devices.
+      - name: mobile_insights_page_views
+        description: Views of the 'Insights' page from mobile devices.
+      - name: mobile_products_page_views
+        description: Views of the 'Products' page from mobile devices.
+      - name: mobile_about_page_views
+        description: Views of the 'About' page from mobile devices.
+      - name: mobile_people_page_views
+        description: Views of the 'People' page from mobile devices.
+      - name: desktop_insights_page_views
+        description: Views of the 'Insights' page from desktop devices.
+      - name: desktop_careers_page_views
+        description: Views of the 'Careers' page from desktop devices.
+      - name: desktop_life_at_page_views
+        description: Views of the 'Life At' page from desktop devices.
+      - name: desktop_jobs_page_views
+        description: Views of the 'Jobs' page from desktop devices.
+      - name: desktop_people_page_views
+        description: Views of the 'People' page from desktop devices.
+      - name: desktop_about_page_views
+        description: Views of the 'About' page from desktop devices.
+      - name: desktop_overview_page_views
+        description: Views of the 'Overview' page from desktop devices.
+      - name: desktop_products_page_views
+        description: Views of the 'Products' page from desktop devices.
+      - name: _fivetran_id
+        description: Fivetran-generated ID for the record.
+        tests:
+          - not_null
+      - name: _fivetran_synced
+        description: Timestamp when the record was synced by Fivetran.
+        tests:
+          - not_null
+      - name: organization_id
+        description: Identifier for the organization (LinkedIn page).
+        tests:
+          - not_null
+      - tests:
+          - unique:
+              column_name: "(day, dimension_id, dimension, organization_id)"
+
+  - name: mrt_posts_on_going
+    description: Mart model that maintains an ongoing, incrementally updated table of post statistics, with UPSERT logic based on post_id and day.
+    config:
+      schema: _MART
+      materialized: incremental
+      unique_key: ['post_id', 'day']
+      cluster_by: ['day', 'organization_id', 'post_category']
+      incremental_strategy: merge
+      on_schema_change: fail
+    columns:
+      - name: day
+        description: Date of the snapshot.
+        tests:
+          - not_null
+      - name: post_id
+        description: Unique identifier for the LinkedIn post.
+        tests:
+          - not_null
+      - name: organization_id
+        description: Identifier for the organization that owns the post.
+        tests:
+          - not_null
+      - name: type
+        description: Type of the post (e.g., text, image, video).
+        tests:
+          - not_null
+      - name: author
+        description: Author of the post.
+      - name: commentary
+        description: Text content or commentary of the post.
+      - name: visibility
+        description: Visibility setting of the post (e.g., public, connections).
+      - name: created_time
+        description: Timestamp when the post was created.
+        tests:
+          - not_null
+      - name: first_published_at
+        description: Timestamp when the post was first published.
+        tests:
+          - not_null
+      - name: last_modified_time
+        description: Timestamp when the post was last modified.
+      - name: lifecycle_state
+        description: Current lifecycle state of the post (e.g., published, deleted).
+      - name: ugc_post_synced
+        description: Timestamp when the post data was synced by Fivetran.
+        tests:
+          - not_null
+      - name: _fivetran_synced
+        description: Timestamp when the post statistics were synced by Fivetran.
+        tests:
+          - not_null
+      - name: engagement
+        description: Engagement metric for the post.
+      - name: share_count
+        description: Number of shares for the post.
+      - name: click_count
+        description: Number of clicks on the post.
+      - name: like_count
+        description: Number of likes on the post.
+      - name: impression_count
+        description: Number of impressions for the post.
+      - name: comment_count
+        description: Number of comments on the post.
+      - name: has_stats
+        description: Boolean indicating if statistics are available for the post.
+      - name: post_category
+        description: Category or classification of the post.
+      - name: post_title
+        description: Title or headline of the post.
+      - name: post_age
+        description: Age of the post in days since creation.
+      - tests:
+          - unique:
+              column_name: "(post_id, day)"
